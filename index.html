@@ -7,53 +7,41 @@
   <meta name="description" content="Commercial & lifestyle photography, Dubai." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Lora:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
 
-  <div class="progress-bar" id="progressBar"></div>
-
   <header class="site-header" id="siteHeader">
-    <div class="header-inner">
-      <a href="#top" class="brand-mark" id="brandMark"></a>
-      <nav class="main-nav" id="mainNav"></nav>
-      <a class="nav-cta" id="navCta" href="#contact"></a>
-      <button class="nav-toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false">
-        <span></span><span></span>
-      </button>
-    </div>
-    <div class="mobile-nav" id="mobileNav"></div>
+    <a href="#top" class="wordmark" id="wordmark"></a>
+    <button class="menu-btn" id="menuToggle" aria-haspopup="true" aria-expanded="false" aria-controls="menuOverlay">
+      <span class="menu-btn-rule" aria-hidden="true"></span>
+      Menu
+    </button>
   </header>
 
   <main id="top">
-    <section id="hero" class="section hero-section"></section>
+    <section id="hero" class="hero-section"></section>
     <section id="marquee" class="marquee-section"></section>
-    <section id="about" class="section about-section"></section>
-    <section id="services" class="section services-section"></section>
-    <section id="portfolio" class="section portfolio-section"></section>
-    <section id="process" class="section process-section"></section>
-    <section id="clients" class="section clients-section"></section>
-    <section id="testimonials" class="section testimonials-section"></section>
-    <section id="pricing" class="section pricing-section"></section>
-    <section id="journal" class="section journal-section"></section>
-    <section id="contact" class="section contact-section"></section>
+    <section id="about" class="about-section"></section>
+    <section id="services" class="services-section"></section>
+    <section id="portfolio" class="portfolio-section"></section>
+    <section id="clients" class="clients-section"></section>
+    <section id="testimonials" class="testimonials-section"></section>
+    <section id="contact" class="contact-section"></section>
   </main>
 
   <footer class="site-footer" id="siteFooter"></footer>
 
-  <div class="lightbox" id="lightbox" aria-hidden="true">
-    <button class="lightbox-close" id="lightboxClose" aria-label="Close">×</button>
-    <button class="lightbox-nav lightbox-prev" id="lightboxPrev" aria-label="Previous">‹</button>
-    <div class="lightbox-frame">
-      <img id="lightboxImage" src="" alt="" />
-      <div class="lightbox-caption" id="lightboxCaption"></div>
+  <div class="menu-overlay" id="menuOverlay" aria-hidden="true">
+    <div class="menu-overlay-content">
+      <div class="menu-overlay-eyebrow">Menu</div>
+      <ul class="menu-overlay-list" id="menuOverlayList"></ul>
+      <div class="menu-overlay-hint">Click anywhere to close</div>
     </div>
-    <button class="lightbox-nav lightbox-next" id="lightboxNext" aria-label="Next">›</button>
   </div>
 
   <script src="js/config.js"></script>
-  <script src="js/manifest.js"></script>
   <script src="js/main.js"></script>
 </body>
 </html>

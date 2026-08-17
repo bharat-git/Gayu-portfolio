@@ -1,41 +1,78 @@
 /**
- * Renders every section from window.SITE_CONFIG + window.PORTFOLIO_MANIFEST,
- * then wires up interactions (nav, scroll reveal, filters, lightbox, form).
+ * Renders every section from window.SITE_CONFIG, then wires up interactions:
+ * scroll reveal, the portfolio filter, the menu overlay and the contact form.
  *
  * To add a brand-new section: write a render function below (renderXyz),
- * add its markup target in index.html (<section id="xyz">), add "xyz" to
- * SITE_CONFIG.sections in js/config.js, and add its data block to config.js.
+ * add its markup target in index.html (<section id="xyz">), and add its
+ * data block to js/config.js.
  */
 (function () {
   "use strict";
 
   const CFG = window.SITE_CONFIG;
-  const MANIFEST = window.PORTFOLIO_MANIFEST || {};
-  const IMG_BASE = "Portfolio-images";
 
-  function imgPath(category, file) {
-    return `${IMG_BASE}/${category}/${file}`;
+  /* ---------------------------------------------------------------------
+     Girih motifs (service card icons) + testimonial medallion
+  --------------------------------------------------------------------- */
+  const SERVICE_MOTIFS = {
+    campaigns: `
+      <rect x="-14" y="-14" width="28" height="28"></rect>
+      <rect x="-14" y="-14" width="28" height="28" transform="rotate(45)"></rect>
+      <path d="M0 -20 L6 0 L0 20 L-6 0 Z"></path>
+      <path d="M-20 0 L0 -6 L20 0 L0 6 Z"></path>
+      <circle r="4.5"></circle>`,
+    fashion: `
+      <path d="M0 -20 C10 -12 14 -4 14 4 L14 20 L-14 20 L-14 4 C-14 -4 -10 -12 0 -20 Z"></path>
+      <path d="M0 -11 C7 -5 9 0 9 5 L9 20 L-9 20 L-9 5 C-9 0 -7 -5 0 -11 Z"></path>
+      <path d="M0 -2 C4 2 5 5 5 8 L5 20 L-5 20 L-5 8 C-5 5 -4 2 0 -2 Z"></path>
+      <path d="M0 -20 L0 20"></path>`,
+    food: `
+      <path d="M0 -19 L16.5 -9.5 L16.5 9.5 L0 19 L-16.5 9.5 L-16.5 -9.5 Z"></path>
+      <path d="M0 -10.5 L9 -5.25 L9 5.25 L0 10.5 L-9 5.25 L-9 -5.25 Z"></path>
+      <path d="M0 -19 L0 -10.5 M16.5 -9.5 L9 -5.25 M16.5 9.5 L9 5.25 M0 19 L0 10.5 M-16.5 9.5 L-9 5.25 M-16.5 -9.5 L-9 -5.25"></path>
+      <circle r="3.5"></circle>`,
+    automotive: `
+      <circle r="9" cx="-7" cy="0"></circle>
+      <circle r="9" cx="7" cy="0"></circle>
+      <circle r="9" cx="0" cy="-7"></circle>
+      <circle r="9" cx="0" cy="7"></circle>
+      <path d="M0 -18 L18 0 L0 18 L-18 0 Z"></path>`,
+  };
+
+  function serviceMotifSvg(motif) {
+    const inner = SERVICE_MOTIFS[motif] || "";
+    return `<svg class="card-motif" viewBox="0 0 48 48" width="46" height="46" aria-hidden="true"><g transform="translate(24 24)">${inner}</g></svg>`;
   }
 
-  function el(html) {
-    const t = document.createElement("template");
-    t.innerHTML = html.trim();
-    return t.content.firstElementChild;
-  }
-
-  function setSectionVisibility() {
-    CFG.sections.forEach((s) => {
-      const node = document.getElementById(s.id);
-      if (!node) return;
-      if (!s.enabled) node.remove();
-    });
+  function testimonialMedallionSvg() {
+    const outerLozenge = "M0 -138 L26 -92 L0 -46 L-26 -92 Z";
+    const innerLozenge = "M0 -92 L14 -69 L0 -46 L-14 -69 Z";
+    const lozenges = Array.from({ length: 8 })
+      .map(
+        (_, i) => `<g transform="rotate(${i * 45})"><path d="${outerLozenge}"></path><path d="${innerLozenge}"></path></g>`
+      )
+      .join("");
+    const octagon =
+      "0,-14 9.9,-9.9 14,0 9.9,9.9 0,14 -9.9,9.9 -14,0 -9.9,-9.9";
+    return `
+      <svg class="testimonial-medallion" viewBox="0 0 320 320" aria-hidden="true">
+        <g transform="translate(160 160)" fill="none" stroke="#c9a26a" stroke-width="0.7">
+          <circle r="138"></circle>
+          <circle r="92"></circle>
+          <circle r="46"></circle>
+          ${lozenges}
+          <rect x="-10" y="-10" width="20" height="20"></rect>
+          <rect x="-10" y="-10" width="20" height="20" transform="rotate(45)"></rect>
+          <polygon points="${octagon}"></polygon>
+        </g>
+      </svg>`;
   }
 
   /* ---------------------------------------------------------------------
-     Header / Nav
+     Header / menu overlay
   --------------------------------------------------------------------- */
   function renderHeader() {
-    document.getElementById("brandMark").textContent = CFG.brand.name;
+    document.getElementById("wordmark").textContent = CFG.brand.name;
     document.title = CFG.meta.title;
 
     const metaDesc = document.querySelector('meta[name="description"]');
@@ -47,40 +84,74 @@
       favicon.href = CFG.meta.favicon;
       if (!favicon.parentNode) document.head.appendChild(favicon);
     }
+  }
 
-    const nav = document.getElementById("mainNav");
-    nav.innerHTML = CFG.nav.links.map((l) => `<a href="${l.href}">${l.label}</a>`).join("");
+  function renderMenuOverlay() {
+    const list = document.getElementById("menuOverlayList");
+    list.innerHTML = CFG.menu.items
+      .map((item) => `<li><a href="${item.href}">${item.label}</a></li>`)
+      .join("");
+  }
 
-    const cta = document.getElementById("navCta");
-    cta.textContent = CFG.nav.cta.label;
-    cta.href = CFG.nav.cta.href;
+  function wireMenuOverlay() {
+    const toggle = document.getElementById("menuToggle");
+    const overlay = document.getElementById("menuOverlay");
+    let lastFocused = null;
 
-    const mobileNav = document.getElementById("mobileNav");
-    mobileNav.innerHTML = `<div class="mobile-nav-inner"><div class="mobile-nav-list">
-      ${CFG.nav.links.map((l) => `<a href="${l.href}">${l.label}</a>`).join("")}
-      <a href="${CFG.nav.cta.href}">${CFG.nav.cta.label}</a>
-    </div></div>`;
+    function focusableEls() {
+      return Array.from(overlay.querySelectorAll("a, button")).filter((el) => el.offsetParent !== null);
+    }
 
-    const toggle = document.getElementById("navToggle");
-    const header = document.getElementById("siteHeader");
+    function openMenu() {
+      lastFocused = document.activeElement;
+      overlay.classList.add("is-open");
+      overlay.setAttribute("aria-hidden", "false");
+      toggle.setAttribute("aria-expanded", "true");
+      document.body.style.overflow = "hidden";
+      const first = focusableEls()[0];
+      if (first) first.focus();
+      document.addEventListener("keydown", onKeydown);
+    }
+
+    function closeMenu() {
+      overlay.classList.remove("is-open");
+      overlay.setAttribute("aria-hidden", "true");
+      toggle.setAttribute("aria-expanded", "false");
+      document.body.style.overflow = "";
+      document.removeEventListener("keydown", onKeydown);
+      if (lastFocused) lastFocused.focus();
+    }
+
+    function onKeydown(e) {
+      if (e.key === "Escape") {
+        closeMenu();
+        return;
+      }
+      if (e.key === "Tab") {
+        const els = focusableEls();
+        if (!els.length) return;
+        const first = els[0];
+        const last = els[els.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    }
+
     toggle.addEventListener("click", () => {
-      const open = mobileNav.classList.toggle("is-open");
-      toggle.setAttribute("aria-expanded", String(open));
-      header.classList.toggle("is-menu-open", open);
+      if (overlay.classList.contains("is-open")) closeMenu();
+      else openMenu();
     });
-    mobileNav.querySelectorAll("a").forEach((a) =>
-      a.addEventListener("click", () => {
-        mobileNav.classList.remove("is-open");
-        toggle.setAttribute("aria-expanded", "false");
-        header.classList.remove("is-menu-open");
-      })
-    );
 
-    window.addEventListener(
-      "scroll",
-      () => header.classList.toggle("is-scrolled", window.scrollY > 40),
-      { passive: true }
-    );
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) closeMenu();
+    });
+
+    overlay.querySelectorAll("a").forEach((a) => a.addEventListener("click", closeMenu));
   }
 
   /* ---------------------------------------------------------------------
@@ -91,21 +162,18 @@
     if (!section) return;
     const h = CFG.hero;
     section.innerHTML = `
-      <div class="hero-bg"><img src="${h.image}" alt="" /></div>
-      <div class="hero-content">
-        <div class="hero-eyebrow">${h.eyebrow}</div>
-        <h1 class="hero-heading">${h.heading}</h1>
-        <p class="hero-sub">${h.subheading}</p>
-        <div class="hero-actions">
-          <a class="btn btn-primary" href="${h.primaryCta.href}">${h.primaryCta.label}</a>
-          <a class="btn btn-ghost" href="${h.secondaryCta.href}">${h.secondaryCta.label}</a>
+      <img class="hero-image" src="${h.image}" alt="${h.imageAlt}" />
+      <div class="hero-scrim-bottom"></div>
+      <div class="hero-scrim-top"></div>
+      <div class="girih girih--hero"></div>
+      <div class="hero-content" data-reveal>
+        <div class="hero-eyebrow-row eyebrow-rule">
+          <span class="eyebrow">${h.eyebrow}</span>
         </div>
-        <div class="hero-stats">
-          ${h.stats
-            .map(
-              (s) => `<div class="hero-stat"><div class="hero-stat-value">${s.value}</div><div class="hero-stat-label">${s.label}</div></div>`
-            )
-            .join("")}
+        <h1 class="hero-heading">${h.heading}</h1>
+        <div class="hero-bottom-row">
+          <p class="hero-standfirst">${h.standfirst}</p>
+          <a class="btn" href="${h.cta.href}">${h.cta.label}</a>
         </div>
       </div>
     `;
@@ -118,8 +186,8 @@
     const section = document.getElementById("marquee");
     if (!section) return;
     const items = CFG.marquee.items;
-    const doubled = [...items, ...items];
-    section.innerHTML = `<div class="marquee-track">${doubled.map((i) => `<span>${i}</span>`).join("")}</div>`;
+    const run = items.map((i) => `<span>${i}</span><span class="dot">·</span>`).join("");
+    section.innerHTML = `<div class="marquee-track">${run}${run}</div>`;
   }
 
   /* ---------------------------------------------------------------------
@@ -130,20 +198,27 @@
     if (!section) return;
     const a = CFG.about;
     section.innerHTML = `
-      <div class="container">
-        <div class="about-media" data-reveal-media><div class="about-media-inner"><img src="${a.image}" alt="${a.signatureLine}" /></div></div>
-        <div class="about-body">
-          <div class="eyebrow" data-reveal>${a.eyebrow}</div>
-          <h2 data-reveal style="white-space:pre-line; font-size:clamp(28px,4vw,46px);">${a.heading}</h2>
-          <div style="margin-top:24px;" data-reveal data-reveal-delay="1">
-            ${a.body.map((p) => `<p>${p}</p>`).join("")}
-          </div>
-          <div class="about-highlights" data-reveal data-reveal-delay="2">
-            ${a.resumeHighlights
+      <div class="girih-band girih-band--left"></div>
+      <div class="girih-band girih-band--right"></div>
+      <div class="about-grid">
+        <div data-reveal>
+          <span class="eyebrow">${a.eyebrow}</span>
+          <h2 class="about-heading">${a.heading}</h2>
+          <div class="about-body">${a.body.map((p) => `<p>${p}</p>`).join("")}</div>
+          <div class="about-stats">
+            ${a.stats
               .map(
-                (h) => `<div class="about-highlight"><span class="about-highlight-label">${h.label}</span><span class="about-highlight-value">${h.value}</span></div>`
+                (s) => `<div><div class="about-stat-value tnum">${s.value}</div><div class="about-stat-label">${s.label}</div></div>`
               )
               .join("")}
+          </div>
+        </div>
+        <div data-reveal data-reveal-delay>
+          <div class="portrait-plate">
+            <div class="portrait-plate-inner">
+              <img src="${a.portrait.image}" alt="${a.portrait.alt}" width="196" height="196" />
+              <div class="portrait-caption">${a.portrait.captionLines.join("<br />")}</div>
+            </div>
           </div>
         </div>
       </div>
@@ -158,24 +233,22 @@
     if (!section) return;
     const s = CFG.services;
     section.innerHTML = `
-      <div class="container">
-        <div class="services-header">
-          <div class="eyebrow" data-reveal>${s.eyebrow}</div>
-          <h2 data-reveal>${s.heading}</h2>
-          <p data-reveal data-reveal-delay="1">${s.subheading}</p>
-        </div>
-        <div class="services-grid">
-          ${s.items
-            .map(
-              (item, i) => `
-            <div class="service-card" data-reveal data-reveal-delay="${(i % 4) + 1}">
-              <div class="service-media"><img src="${item.image}" alt="${item.title}" loading="lazy" /></div>
-              <h3>${item.title}</h3>
-              <p>${item.description}</p>
-            </div>`
-            )
-            .join("")}
-        </div>
+      <div class="section-heading-row" data-reveal>
+        <h2>${s.eyebrow}</h2>
+        <span class="eyebrow">${s.heading}</span>
+      </div>
+      <div class="services-grid">
+        ${s.items
+          .map(
+            (item) => `
+          <div class="service-card" data-reveal>
+            ${serviceMotifSvg(item.motif)}
+            <span class="service-index tnum">${item.index}</span>
+            <h3>${item.title}</h3>
+            <p>${item.description}</p>
+          </div>`
+          )
+          .join("")}
       </div>
     `;
   }
@@ -183,114 +256,55 @@
   /* ---------------------------------------------------------------------
      Portfolio
   --------------------------------------------------------------------- */
-  let lightboxItems = [];
-  let lightboxIndex = 0;
-
   function renderPortfolio() {
     const section = document.getElementById("portfolio");
     if (!section) return;
     const p = CFG.portfolio;
 
-    const items = [];
-    p.categories.forEach((cat) => {
-      const files = MANIFEST[cat.key] || [];
-      files.forEach((entry) => {
-        // manifest entries are { file, width, height } (width/height may be null
-        // for formats the zero-dependency size reader can't parse)
-        const file = typeof entry === "string" ? entry : entry.file;
-        const width = typeof entry === "object" ? entry.width : null;
-        const height = typeof entry === "object" ? entry.height : null;
-        items.push({ category: cat.key, label: cat.label, src: imgPath(cat.key, file), file, width, height });
-      });
-    });
-    lightboxItems = items;
-
     section.innerHTML = `
-      <div class="container">
-        <div class="portfolio-header">
-          <div class="portfolio-header-text">
-            <div class="eyebrow" data-reveal>${p.eyebrow}</div>
-            <h2 data-reveal>${p.heading}</h2>
-            <p data-reveal data-reveal-delay="1">${p.subheading}</p>
-          </div>
-          <div class="portfolio-filters" id="portfolioFilters">
-            <button class="filter-pill is-active" data-filter="all">All</button>
-            ${p.categories.map((c) => `<button class="filter-pill" data-filter="${c.key}">${c.label}</button>`).join("")}
-          </div>
-        </div>
-        <div class="portfolio-grid" id="portfolioGrid">
-          ${items
-            .map((item, i) => {
-              // Reserve aspect ratio up front (from manifest dimensions when known,
-              // else a sane portrait default) so lazy-loaded images don't collapse
-              // the CSS-columns masonry to 0-height before they load.
-              const ratio = item.width && item.height ? `${item.width} / ${item.height}` : "4 / 5";
-              return `
-            <figure class="portfolio-item" data-category="${item.category}" data-index="${i}" style="aspect-ratio:${ratio};">
-              <div class="portfolio-item-inner">
-                <img src="${item.src}" alt="${item.label}" loading="lazy"
-                  ${item.width ? `width="${item.width}"` : ""} ${item.height ? `height="${item.height}"` : ""} />
-                <div class="portfolio-item-overlay"><span class="portfolio-item-label">${item.label}</span></div>
-              </div>
-            </figure>`;
-            })
-            .join("")}
-        </div>
+      <div class="section-heading-row" data-reveal>
+        <h2>${p.heading}</h2>
+        <a class="eyebrow" href="${p.moreLink.href}" target="_blank" rel="noopener">${p.moreLink.label} ↗</a>
+      </div>
+      <div class="portfolio-filters" id="portfolioFilters" role="group" aria-label="Filter work by category">
+        ${p.categories
+          .map(
+            (c, i) => `<button class="filter-btn${i === 0 ? " is-active" : ""}" data-filter="${c.key}" aria-pressed="${i === 0}">${c.label}</button>`
+          )
+          .join("")}
+      </div>
+      <div class="portfolio-grid" id="portfolioGrid">
+        ${p.items
+          .map((item) => {
+            const media = item.image
+              ? `<img src="${item.image}" alt="${item.alt || item.label}" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" />`
+              : `<div class="portfolio-tile-stripes" aria-hidden="true"></div><span class="portfolio-tile-label">${item.label}</span>`;
+            return `
+          <figure class="portfolio-tile${item.span2 ? " portfolio-tile--span2" : ""}" data-category="${item.category}" data-aspect="${item.aspect}">
+            ${media}
+          </figure>`;
+          })
+          .join("")}
       </div>
     `;
 
-    // Filters
-    const filters = section.querySelectorAll(".filter-pill");
-    const gridItems = section.querySelectorAll(".portfolio-item");
+    const filters = section.querySelectorAll(".filter-btn");
+    const tiles = section.querySelectorAll(".portfolio-tile");
     filters.forEach((btn) => {
       btn.addEventListener("click", () => {
-        filters.forEach((b) => b.classList.remove("is-active"));
+        filters.forEach((b) => {
+          b.classList.remove("is-active");
+          b.setAttribute("aria-pressed", "false");
+        });
         btn.classList.add("is-active");
+        btn.setAttribute("aria-pressed", "true");
         const key = btn.dataset.filter;
-        gridItems.forEach((item) => {
-          const show = key === "all" || item.dataset.category === key;
-          item.classList.toggle("is-hidden", !show);
+        tiles.forEach((tile) => {
+          const show = key === "all" || tile.dataset.category === key;
+          tile.classList.toggle("is-hidden", !show);
         });
       });
     });
-
-    // Lightbox open
-    gridItems.forEach((item) => {
-      item.addEventListener("click", () => openLightbox(Number(item.dataset.index)));
-    });
-
-    // Reveal each item (staggered by natural DOM order via IO, not CSS delay,
-    // since count is dynamic)
-    observeReveal(gridItems);
-  }
-
-  /* ---------------------------------------------------------------------
-     Process
-  --------------------------------------------------------------------- */
-  function renderProcess() {
-    const section = document.getElementById("process");
-    if (!section) return;
-    const pr = CFG.process;
-    section.innerHTML = `
-      <div class="container">
-        <div class="process-header">
-          <div class="eyebrow" data-reveal>${pr.eyebrow}</div>
-          <h2 data-reveal>${pr.heading}</h2>
-        </div>
-        <div class="process-steps">
-          ${pr.steps
-            .map(
-              (st, i) => `
-            <div class="process-step" data-reveal data-reveal-delay="${i + 1}">
-              <div class="process-number">${st.number}</div>
-              <h3>${st.title}</h3>
-              <p>${st.description}</p>
-            </div>`
-            )
-            .join("")}
-        </div>
-      </div>
-    `;
   }
 
   /* ---------------------------------------------------------------------
@@ -301,14 +315,9 @@
     if (!section) return;
     const c = CFG.clients;
     section.innerHTML = `
-      <div class="container">
-        <div class="clients-header">
-          <div class="eyebrow" data-reveal>${c.eyebrow}</div>
-          <h2 data-reveal style="font-size:clamp(22px,3vw,32px);">${c.heading}</h2>
-        </div>
-        <div class="clients-logos" data-reveal data-reveal-delay="1">
-          ${c.logos.map((l) => `<span class="client-logo">${l.name}</span>`).join("")}
-        </div>
+      <div class="eyebrow clients-eyebrow" data-reveal>${c.eyebrow}</div>
+      <div class="clients-logos" data-reveal data-reveal-delay>
+        ${c.logos.map((name) => `<span class="client-logo">${name}</span>`).join("")}
       </div>
     `;
   }
@@ -321,56 +330,19 @@
     if (!section) return;
     const t = CFG.testimonials;
     section.innerHTML = `
-      <div class="container">
-        <div class="testimonials-header">
-          <div class="eyebrow" data-reveal>${t.eyebrow}</div>
-          <h2 data-reveal>${t.heading}</h2>
-        </div>
-        <div class="testimonial-track">
-          ${t.items
-            .map(
-              (item, i) => `
-            <div class="testimonial-card" data-reveal data-reveal-delay="${i + 1}">
-              <p class="testimonial-quote">&ldquo;${item.quote}&rdquo;</p>
-              <div class="testimonial-name">${item.name}</div>
-              <div class="testimonial-role">${item.role}</div>
-            </div>`
-            )
-            .join("")}
-        </div>
-      </div>
-    `;
-  }
-
-  /* ---------------------------------------------------------------------
-     Pricing
-  --------------------------------------------------------------------- */
-  function renderPricing() {
-    const section = document.getElementById("pricing");
-    if (!section) return;
-    const pr = CFG.pricing;
-    section.innerHTML = `
-      <div class="container">
-        <div class="pricing-header">
-          <div class="eyebrow" data-reveal>${pr.eyebrow}</div>
-          <h2 data-reveal>${pr.heading}</h2>
-          <p data-reveal data-reveal-delay="1">${pr.subheading}</p>
-        </div>
-        <div class="pricing-grid">
-          ${pr.packages
-            .map(
-              (pk, i) => `
-            <div class="pricing-card ${pk.featured ? "is-featured" : ""}" data-reveal data-reveal-delay="${i + 1}">
-              <div class="pricing-name">${pk.name}</div>
-              <div class="pricing-price">${pk.price}</div>
-              <p class="pricing-desc">${pk.description}</p>
-              <ul class="pricing-features">${pk.features.map((f) => `<li>${f}</li>`).join("")}</ul>
-              <a class="btn ${pk.featured ? "btn-primary" : "btn-ghost"} form-submit" href="#contact">Get a quote</a>
-            </div>`
-            )
-            .join("")}
-        </div>
-        <p class="pricing-note" data-reveal>${pr.note}</p>
+      ${testimonialMedallionSvg()}
+      <p class="testimonial-lead" data-reveal>&ldquo;${t.lead.quote}&rdquo;</p>
+      <div class="testimonial-lead-attr" data-reveal>${t.lead.attribution}</div>
+      <div class="testimonial-secondary-grid" data-reveal data-reveal-delay>
+        ${t.secondary
+          .map(
+            (item) => `
+          <div class="testimonial-secondary">
+            <p>&ldquo;${item.quote}&rdquo;</p>
+            <div class="testimonial-secondary-attr">${item.attribution}</div>
+          </div>`
+          )
+          .join("")}
       </div>
     `;
   }
@@ -385,31 +357,33 @@
     const b = CFG.brand;
 
     const fieldHtml = (f) => {
+      const id = `f_${f.name}`;
       if (f.type === "textarea") {
-        return `<div class="form-row"><label for="f_${f.name}">${f.label}${f.required ? " *" : ""}</label><textarea id="f_${f.name}" name="${f.name}" ${f.required ? "required" : ""}></textarea></div>`;
+        return `<label class="form-field" for="${id}"><span>${f.label}${f.required ? " *" : ""}</span><textarea id="${id}" name="${f.name}" rows="${f.rows || 4}" ${f.required ? "required" : ""}></textarea></label>`;
       }
       if (f.type === "select") {
-        return `<div class="form-row"><label for="f_${f.name}">${f.label}</label><select id="f_${f.name}" name="${f.name}">${f.options.map((o) => `<option>${o}</option>`).join("")}</select></div>`;
+        return `<label class="form-field" for="${id}"><span>${f.label}</span><select id="${id}" name="${f.name}">${f.options.map((o) => `<option>${o}</option>`).join("")}</select></label>`;
       }
-      return `<div class="form-row"><label for="f_${f.name}">${f.label}${f.required ? " *" : ""}</label><input id="f_${f.name}" name="${f.name}" type="${f.type}" ${f.required ? "required" : ""} /></div>`;
+      return `<label class="form-field" for="${id}"><span>${f.label}${f.required ? " *" : ""}</span><input id="${id}" name="${f.name}" type="${f.type}" ${f.required ? "required" : ""} /></label>`;
     };
 
     section.innerHTML = `
-      <div class="container contact-grid">
-        <div class="contact-info">
-          <div class="eyebrow" data-reveal>${c.eyebrow}</div>
-          <h2 data-reveal>${c.heading}</h2>
-          <p data-reveal data-reveal-delay="1">${c.subheading}</p>
-          <div class="contact-details" data-reveal data-reveal-delay="2">
-            <div><div class="contact-detail-label">Email</div><div class="contact-detail-value"><a href="mailto:${b.email}">${b.email}</a></div></div>
-            <div><div class="contact-detail-label">Phone</div><div class="contact-detail-value"><a href="tel:${b.phone}">${b.phone}</a></div></div>
-            <div><div class="contact-detail-label">Based in</div><div class="contact-detail-value">${b.location}</div></div>
+      <div class="girih girih--contact"></div>
+      <div class="contact-grid">
+        <div data-reveal>
+          <span class="eyebrow">${c.eyebrow}</span>
+          <h2 class="contact-heading">${c.heading}</h2>
+          <p class="contact-lead">${c.lead}</p>
+          <div class="contact-details">
+            <a href="mailto:${b.email}">${b.email}</a>
+            <span>${b.phone}</span>
+            <a href="${b.behance}" target="_blank" rel="noopener">Behance ↗</a>
           </div>
         </div>
-        <form class="contact-form" id="contactForm" data-reveal data-reveal-delay="1">
+        <form class="contact-form" id="contactForm" data-reveal data-reveal-delay>
           ${c.formFields.map(fieldHtml).join("")}
-          <button class="btn btn-primary form-submit" type="submit">${c.submitLabel}</button>
-          <div class="form-status" id="formStatus"></div>
+          <button class="btn form-submit" type="submit">${c.submitLabel}</button>
+          <div class="form-status" id="formStatus" role="status"></div>
         </form>
       </div>
     `;
@@ -426,7 +400,7 @@
           body: JSON.stringify(data),
         })
           .then(() => {
-            status.textContent = "Thanks — I'll be in touch within 1–2 business days.";
+            status.textContent = "Thanks — I'll be in touch within one to two business days.";
             form.reset();
           })
           .catch(() => {
@@ -449,142 +423,44 @@
   function renderFooter() {
     const footer = document.getElementById("siteFooter");
     const f = CFG.footer;
-    const b = CFG.brand;
-    footer.innerHTML = `
-      <div class="footer-inner">
-        <div>
-          <div class="footer-brand">${b.name}</div>
-          <div class="footer-tagline">${f.tagline}</div>
-        </div>
-        <div class="footer-social">
-          <a href="${b.instagram}" target="_blank" rel="noopener">Instagram</a>
-          <a href="${b.behance}" target="_blank" rel="noopener">Behance</a>
-          <a href="${b.linkedin}" target="_blank" rel="noopener">LinkedIn</a>
-        </div>
-        <div class="footer-copy">${f.copyright}</div>
-      </div>
-    `;
+    footer.innerHTML = `<span>${f.line1}</span><span>${f.line2}</span>`;
   }
 
   /* ---------------------------------------------------------------------
-     Lightbox
+     Scroll reveal
   --------------------------------------------------------------------- */
-  function openLightbox(index) {
-    lightboxIndex = index;
-    updateLightbox();
-    document.getElementById("lightbox").classList.add("is-open");
-    document.body.style.overflow = "hidden";
-  }
-  function closeLightbox() {
-    document.getElementById("lightbox").classList.remove("is-open");
-    document.body.style.overflow = "";
-  }
-  function updateLightbox() {
-    const item = lightboxItems[lightboxIndex];
-    if (!item) return;
-    document.getElementById("lightboxImage").src = item.src;
-    document.getElementById("lightboxImage").alt = item.label;
-    document.getElementById("lightboxCaption").textContent = item.label;
-  }
-  function nextLightbox() {
-    lightboxIndex = (lightboxIndex + 1) % lightboxItems.length;
-    updateLightbox();
-  }
-  function prevLightbox() {
-    lightboxIndex = (lightboxIndex - 1 + lightboxItems.length) % lightboxItems.length;
-    updateLightbox();
-  }
-
-  function wireLightbox() {
-    document.getElementById("lightboxClose").addEventListener("click", closeLightbox);
-    document.getElementById("lightboxNext").addEventListener("click", nextLightbox);
-    document.getElementById("lightboxPrev").addEventListener("click", prevLightbox);
-    document.getElementById("lightbox").addEventListener("click", (e) => {
-      if (e.target.id === "lightbox") closeLightbox();
-    });
-    document.addEventListener("keydown", (e) => {
-      const lb = document.getElementById("lightbox");
-      if (!lb.classList.contains("is-open")) return;
-      if (e.key === "Escape") closeLightbox();
-      if (e.key === "ArrowRight") nextLightbox();
-      if (e.key === "ArrowLeft") prevLightbox();
-    });
-  }
-
-  /* ---------------------------------------------------------------------
-     Scroll progress + reveal-on-scroll
-  --------------------------------------------------------------------- */
-  function wireProgressBar() {
-    const bar = document.getElementById("progressBar");
-    window.addEventListener(
-      "scroll",
-      () => {
-        const h = document.documentElement;
-        const scrollable = h.scrollHeight - h.clientHeight;
-        const scrolled = scrollable > 0 ? h.scrollTop / scrollable : 0;
-        bar.style.width = `${Math.min(scrolled * 100, 100)}%`;
-      },
-      { passive: true }
-    );
-  }
-
-  let revealObserver;
-  function observeReveal(nodeList) {
-    if (!revealObserver) {
-      revealObserver = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              entry.target.classList.add("is-visible");
-              revealObserver.unobserve(entry.target);
-            }
-          });
-        },
-        { threshold: 0.12, rootMargin: "0px 0px -6% 0px" }
-      );
-    }
-    nodeList.forEach((n) => revealObserver.observe(n));
-  }
-
   function wireReveal() {
-    observeReveal(document.querySelectorAll("[data-reveal]"));
-    // about media uses its own clip-path visible class
-    const aboutMedia = document.querySelector("[data-reveal-media]");
-    if (aboutMedia) {
-      const io = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              entry.target.classList.add("is-visible");
-              io.unobserve(entry.target);
-            }
-          });
-        },
-        { threshold: 0.2 }
-      );
-      io.observe(aboutMedia);
-    }
+    const targets = document.querySelectorAll("[data-reveal]");
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("is-visible");
+            io.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.08 }
+    );
+    targets.forEach((t) => io.observe(t));
   }
 
   /* ---------------------------------------------------------------------
      Init
   --------------------------------------------------------------------- */
   function init() {
-    setSectionVisibility();
     renderHeader();
+    renderMenuOverlay();
     renderHero();
     renderMarquee();
     renderAbout();
     renderServices();
     renderPortfolio();
-    renderProcess();
     renderClients();
     renderTestimonials();
-    renderPricing();
     renderContact();
     renderFooter();
-    wireLightbox();
-    wireProgressBar();
+    wireMenuOverlay();
     wireReveal();
   }
 
