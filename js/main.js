@@ -41,6 +41,13 @@
     const metaDesc = document.querySelector('meta[name="description"]');
     if (metaDesc) metaDesc.setAttribute("content", CFG.meta.description);
 
+    if (CFG.meta.favicon) {
+      const favicon = document.querySelector('link[rel="icon"]') || document.createElement("link");
+      favicon.rel = "icon";
+      favicon.href = CFG.meta.favicon;
+      if (!favicon.parentNode) document.head.appendChild(favicon);
+    }
+
     const nav = document.getElementById("mainNav");
     nav.innerHTML = CFG.nav.links.map((l) => `<a href="${l.href}">${l.label}</a>`).join("");
 
@@ -254,7 +261,7 @@
 
     // Reveal each item (staggered by natural DOM order via IO, not CSS delay,
     // since count is dynamic)
-    observeReveal(gridItems, true);
+    observeReveal(gridItems);
   }
 
   /* ---------------------------------------------------------------------
@@ -513,7 +520,8 @@
       "scroll",
       () => {
         const h = document.documentElement;
-        const scrolled = (h.scrollTop) / (h.scrollHeight - h.clientHeight);
+        const scrollable = h.scrollHeight - h.clientHeight;
+        const scrolled = scrollable > 0 ? h.scrollTop / scrollable : 0;
         bar.style.width = `${Math.min(scrolled * 100, 100)}%`;
       },
       { passive: true }
@@ -521,7 +529,7 @@
   }
 
   let revealObserver;
-  function observeReveal(nodeList, once) {
+  function observeReveal(nodeList) {
     if (!revealObserver) {
       revealObserver = new IntersectionObserver(
         (entries) => {
