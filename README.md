@@ -1,12 +1,11 @@
 # Gayatri Narayanan — Photography Website
 
-A sleek, dark, editorial-style portfolio + business site, built as plain
-HTML/CSS/JS (no build step, no framework) so it's easy to edit, host
-anywhere, and hand off. Structure and business features are inspired by
-manongalama.com (hero → services → work → about → social proof → booking),
-adapted around Gayatri's actual body of work from her Behance profile
-(brand campaigns, fashion/corporate portraiture, food, product, automotive,
-hospitality, and sports photography).
+Version 2: "The Colophon" — a dark, cinematic editorial redesign of the
+landing page, built as plain HTML/CSS/JS (no build step, no framework) so
+it's easy to edit, host anywhere, and hand off. Warm near-white text on a
+near-black ground, Cormorant Garamond over Lora, colour applied as stroke
+rather than fill, hairline rules, and photographs matted like tipped-in
+book plates.
 
 ## Quick start
 
@@ -19,99 +18,75 @@ python3 -m http.server 8000
 # then visit http://localhost:8000
 ```
 
-## Adding / replacing photos — the part you'll use most
-
-1. Drop image files (`.jpg`, `.jpeg`, `.png`, `.webp`) into the matching
-   folder inside `/Portfolio-images/`:
-
-   ```
-   Portfolio-images/
-     hero/          → the big homepage background image (use 1 file)
-     about/         → your portrait for the About section (use 1 file)
-     campaigns/     → brand campaign work
-     fashion/       → fashion & portraiture
-     food/          → food photography
-     product/       → product / lifestyle
-     automobile/    → automotive
-     hospitality/   → hospitality / interiors
-     sports/        → sports
-     portraits/     → general portraits
-   ```
-
-2. Run the manifest script so the site picks up the new files:
-
-   ```bash
-   node scripts/generate-manifest.js
-   ```
-
-   This scans every folder and writes `js/manifest.js`, which the site reads
-   on load. You never hand-type file paths — just drop images in and re-run
-   this one command.
-
-3. Refresh the browser.
-
-**To add a whole new portfolio category** (e.g. `travel`): create
-`Portfolio-images/travel/`, drop images in, add
-`{ key: "travel", label: "Travel" }` to `portfolio.categories` in
-`js/config.js`, then re-run the manifest script.
-
-The placeholder images currently in `/Portfolio-images` are generated
-gradients labeled with their filename — swap them for real photos whenever
-you're ready. They exist only so the site isn't empty out of the box.
-
 ## Editing content — everything lives in `js/config.js`
 
-Text, section order, pricing, testimonials, services, nav links, contact
-details — all of it is one JS object in `js/config.js`, with comments
-explaining each field. You should not need to touch `index.html` or
-`js/main.js` for normal content updates.
+Text, the portfolio grid, testimonials, services, contact details — all of
+it is one JS object in `js/config.js`, with comments explaining each field.
+You should not need to touch `index.html` or `js/main.js` for normal
+content updates.
 
-- **Reorder or hide a section**: edit the `sections` array at the top of
-  `config.js` — flip `enabled: false` to hide something without deleting its
-  content (e.g. the Journal/blog section is off by default).
 - **Change copy**: edit the relevant block (`hero`, `about`, `services`,
-  `pricing`, etc).
-- **Change pricing packages**: edit `pricing.packages` — add, remove, or mark
-  one `featured: true`.
+  `testimonials`, `contact`, etc).
 - **Hook up the contact form**: set `contact.formEndpoint` to a real form
-  backend (Formspree, Basin, your own API). Until you do, the form falls back
-  to opening the visitor's email client with a pre-filled message.
-- **Swap fonts/colors**: the design tokens (`--color-accent`, fonts, easing
-  curves) are declared once at the top of `css/styles.css`.
+  backend (Formspree, Basin, your own API). Until you do, the form falls
+  back to opening the visitor's email client with a pre-filled message.
+- **Swap fonts/colours**: the design tokens (`--color-accent`, fonts,
+  spacing, motion easing) are declared once at the top of `css/styles.css`.
+
+### The portfolio grid is placeholder photography
+
+Only two real photographs ship with the site: the hero panorama and the
+about-section portrait, both in `/assets`. Every tile in `portfolio.items`
+(in `js/config.js`) renders as a labelled diagonal-stripe placeholder until
+it's given a real photo. To swap one in, add `image` (a path) and `alt` to
+that item — `js/main.js` will render the photograph in place of the
+placeholder automatically, at the same aspect ratio and grid span. The
+"More on Behance" link next to the section heading covers the gap for
+visitors until the grid has real work in it.
 
 ## Adding a brand-new section
 
-1. Add a data block for it to `js/config.js` and add its id to `sections`.
-2. Add `<section id="yourSection" class="section"></section>` to
-   `index.html` inside `<main>`.
+1. Add a data block for it to `js/config.js`.
+2. Add `<section id="yourSection"></section>` to `index.html` inside
+   `<main>`.
 3. Write a `renderYourSection()` function in `js/main.js` (copy the shape of
-   an existing one, e.g. `renderProcess`), and call it from `init()`.
+   an existing one, e.g. `renderServices`), and call it from `init()`.
 4. Style it in `css/styles.css` — reuse the existing `.eyebrow`, `.btn`,
    `[data-reveal]` utility classes for consistent animation/typography.
 
 ## What's built in
 
-- Fully responsive (mobile nav drawer, fluid type, masonry portfolio grid
-  that reflows to 2 columns on small screens).
-- Filterable portfolio grid by category, with a full-screen lightbox
-  (keyboard arrows + Escape supported).
-- Scroll-triggered reveal animations throughout (fade/blur-up for text,
-  clip-path image wipes for the About photo and portfolio thumbnails).
-- Auto-generated image dimensions (`scripts/generate-manifest.js` reads each
-  file's real width/height with a zero-dependency parser) so the masonry
-  grid never collapses while images lazy-load.
-- A scroll progress bar, sticky header that condenses on scroll, and a
-  decorative marquee strip.
+- Scroll-triggered reveal animations (respects `prefers-reduced-motion`).
+- A filterable portfolio grid by category.
+- A full-screen menu overlay (the site's only navigation) with a focus
+  trap, Escape-to-close, and click-anywhere-to-close.
+- An infinite marquee of discipline names (pauses under reduced motion).
+- Hand-authored inline SVG girih ornament — service card motifs and the
+  testimonials medallion — plus CSS data-URI tiling patterns for the
+  hero corner, the About section's edge bands, and the contact lattice.
+- Responsive down to small phones: the design handoff this version was
+  built from explicitly left mobile out of scope, so the breakpoints in
+  `css/styles.css` are this repo's own judgement call, not part of the
+  spec. Revisit them if the shipped design doesn't feel right on a device.
 - No external JS dependencies — nothing to `npm install` to run the site.
-  (`node` is only needed to run the manifest script when you add photos.)
+
+## Known placeholders to confirm before shipping
+
+- **Contact email/phone** (`js/config.js` → `brand.email` / `brand.phone`)
+  are carried over from the design handoff, unconfirmed.
+- **Portfolio photography** — see above.
+- **Contact form** has no submit handler beyond the `mailto:` fallback; no
+  validation states or backend are wired up.
+- **Hero image** ships as an unoptimized PNG (`assets/hero-panorama.png`,
+  2400×1420). Re-export as WebP/AVIF at a couple of widths before shipping.
 
 ## Deploying
 
 This is a fully static site — drag the whole folder onto Netlify/Vercel/GitHub
 Pages, or upload it via FTP to any host. No server, database, or build step
-required. Every asset reference (`css/`, `js/`, `Portfolio-images/`) uses a
-relative path, so the site works unmodified whether it's served from a domain
-root or a subpath like a GitHub Pages project URL.
+required. Every asset reference (`css/`, `js/`, `assets/`) uses a relative
+path, so the site works unmodified whether it's served from a domain root or
+a subpath like a GitHub Pages project URL.
 
 ### GitHub Pages
 
@@ -119,11 +94,11 @@ root or a subpath like a GitHub Pages project URL.
    repo).
 2. On GitHub, go to **Settings → Pages**.
 3. Under **Build and deployment → Source**, choose **Deploy from a branch**.
-4. Under **Branch**, choose `main` and folder `/ (root)`, then **Save**.
+4. Under **Branch**, choose the branch you want published and folder
+   `/ (root)`, then **Save**.
 5. GitHub builds and publishes the site at
    `https://<your-username>.github.io/<repo-name>/` — this can take a
-   minute on the first deploy. Re-deploys happen automatically on every push
-   to `main`.
+   minute on the first deploy.
 
 A `.nojekyll` file at the repo root ships with the project so GitHub serves
 the files as-is instead of running them through Jekyll (which isn't needed
