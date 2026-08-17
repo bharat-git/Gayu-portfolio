@@ -109,4 +109,22 @@ explaining each field. You should not need to touch `index.html` or
 
 This is a fully static site — drag the whole folder onto Netlify/Vercel/GitHub
 Pages, or upload it via FTP to any host. No server, database, or build step
-required.
+required. Every asset reference (`css/`, `js/`, `Portfolio-images/`) uses a
+relative path, so the site works unmodified whether it's served from a domain
+root or a subpath like a GitHub Pages project URL.
+
+### GitHub Pages
+
+1. Push this repo to GitHub (already done if you're reading this from the
+   repo).
+2. On GitHub, go to **Settings → Pages**.
+3. Under **Build and deployment → Source**, choose **Deploy from a branch**.
+4. Under **Branch**, choose `main` and folder `/ (root)`, then **Save**.
+5. GitHub builds and publishes the site at
+   `https://<your-username>.github.io/<repo-name>/` — this can take a
+   minute on the first deploy. Re-deploys happen automatically on every push
+   to `main`.
+
+A `.nojekyll` file at the repo root ships with the project so GitHub serves
+the files as-is instead of running them through Jekyll (which isn't needed
+here and can otherwise ignore or mangle files that start with `_`).
